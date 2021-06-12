@@ -1,0 +1,438 @@
+<html>
+	<script src="https://cdn.jsdelivr.net/combine/npm/tone@14.7.58,npm/@magenta/music@1.21.0/es6/core.js,npm/focus-visible@5,npm/html-midi-player@1.1.1"></script>
+	<!-- <midi-player
+  src="SenoraFull.mid" 
+  sound-font visualizer="#myVisualizer">
+</midi-player> -->
+
+
+<head>
+	<style>
+		.button {
+			width: 50px;
+			height: 50px;
+		}
+	</style>
+</head>
+
+<body>
+		<canvas id="GameCanvas" width="600" height="600"></canvas>
+		<br>
+		<button type="buttonUp" class="button" onclick=" directionSet(1) ">/\</button><br>
+		<button type="buttonLeft" class="button" onclick=" directionSet(0)"> &lt; </button>
+		<button type="buttonRight" class="button" onclick=" directionSet(2)"> > </button><br>
+		<button type="buttonDown" class="button" onclick=" directionSet(3)">\/</button>
+
+		<audio autoplay loop>
+			<source  src="SenoraFirstPass.mp3" type="audio/mpeg">
+		  Your browser does not support the audio element.
+		  </audio>
+
+<script>
+	tail = 5; 
+	mouseTail = 1; 
+	window.onload = function () {
+		Canvas = document.getElementById("GameCanvas");
+		Context = Canvas.getContext("2d");
+		document.addEventListener("keydown", KeyPush)
+		setInterval(game, 10000 / 15);
+	};
+	var player = { x: 10, y: 10, xv:0,yv:0,direction: "up", directionAngle: 0, flipNess: true };
+	var newMouse = { x: 10, y: 10, xv:0,yv:0, direction: "up",  directionAngle: 0, flipNess: true }; 
+	var lastFlip = true; var mouse = { direction: 1, flip: true }; 
+	var snakeTexture = new Image();
+	var kidTexture = new Image();
+	var headTexture = new Image();
+	var headSideTexture = new Image();
+	var grassTexture = new Image();
+	var BodyTexture = new Image();
+	//snakeTexture.src = 'snake.png'; var grassTexture = new Image();
+	snakeTexture.src = 'BodyRed.gif'; 
+	var RedBodyTexture = new Image();
+	grassTexture.src = 'grass.png'; 
+	var mouseTexture = new Image();
+	mouseTexture.src = 'mouse.png'; 
+	var snakeHeadTexture = new Image();
+	headTexture.src = "HeadTexture.png";
+	headSideTexture.src = "HeadSideTexture.png";
+	// snakeHeadTexture.src = 'snakeHead.png';
+	BodyTexture.src = 'BodyRed.gif'; 
+	var congoCount = 0;
+
+	var eatSound = new PlaySound("bite.wav"); var xInput = 0.0;
+	var yInput = 0.0; gs = 30;
+
+	tc = 20;
+	player.xv = player.yv = 0;
+	trail = [];
+	mouseTrail = [];
+	axv = ayv = 0;
+	RandomizeMouse(); 
+	document.addEventListener("keydown", function(event) {
+  if (event.keyCode == 32) {
+    player.play();
+	console.log("Yeah");
+  }
+});
+	function game() {
+		ClearScreen(); 
+		ShowPlayer();
+		ShowNewMouse();
+		congoCount++;
+		if (congoCount> 7){
+			congoCount=0;
+		}
+		if(congoCount!=3 && congoCount !=7)
+		{
+			ProccessPlayer();
+			proccessNewMouse();
+
+		}
+	} 
+
+	function PlaySound(src) {
+		this.Sound = document.createElement("audio");
+		this.Sound.src = src;
+		this.Sound.setAttribute("preload", "auto");
+		this.Sound.setAttribute("controls", "none");
+		this.Sound.style.display = "none";
+		document.body.appendChild(this.Sound);
+		this.play = function () {
+			this.Sound.play();
+		}
+		this.Stop = function () {
+			this.Sound.Pause();
+		}
+	} 
+
+	function ClearScreen() {
+		Context.clearRect(0, 0, Canvas.width, Canvas.height);
+		Context.globalAlpha = 0.5;
+		Context.drawImage(grassTexture, 0, 0, gs * tc, gs * tc);
+		Context.globalAlpha = 1;
+	} 
+
+	function ShowPlayer() {
+
+		for (var i = 1; i < trail.length; i++) {
+			if (i == trail.length - 1) {
+				RotateAndPaintImage(BodyTexture,  player.directionAngle, trail[i].x * gs, trail[i].y * gs, gs, gs,player.flip);
+			}
+			else{
+				RotateAndPaintImage(BodyTexture, trail[i].direction, trail[i].x * gs, trail[i].y * gs, gs, gs, player.flip);			
+			}
+		}
+		for (var i = 1; i < trail.length; i++) {
+			if (i == trail.length - 1) {
+				RotateAndPaintImage(headTexture, player.directionAngle, trail[i].x * gs, (trail[i].y -1)* gs, gs, gs,player.flip);
+			}
+			else{
+				RotateAndPaintImage(headTexture, trail[i].direction, trail[i].x * gs, (trail[i].y -1 )* gs, gs, gs,player.flip);			
+			}
+		}
+	}
+
+	function ShowNewMouse() {
+
+		for (var i = 1; i < mouseTrail.length; i++) {
+			if (i == mouseTrail.length - 1) {
+				RotateAndPaintImage(BodyTexture, newMouse.directionAngle, newMouse.x * gs, trail[i].y * gs, gs, gs,newMouse.flip);
+			}
+			else {
+				RotateAndPaintImage(BodyTexture, mouseTrail[i].direction, mouseTrail[i].x * gs, trail[i].y * gs, gs, gs, mouseTrail[i].flip);			
+
+			}
+		}
+		for (var i = 1; i < mouseTrail.length; i++) {
+			if (i == tmouseTrailrail.length - 1) {
+				RotateAndPaintImage(headTexture, newMouse.directionAngle, newMouse.x * gs, (trail[i].y -1)* gs, gs, gs,newMouse.flip);
+			}
+			else {
+				RotateAndPaintImage(headTexture, mouseTrail[i].direction, mouseTrail[i].x * gs, (trail[i].y -1 )* gs, gs, gs,mouseTrail[i].flip);			
+
+			}
+		}
+	}
+
+	function drawSquare(x, y, color) {
+
+		Context.fillStyle = color;
+		Context.fillRect(x * gs, y * gs, gs, gs);
+
+	}
+
+	function showMouse() {
+
+		RotateAndPaintImage(mouseTexture, newMouse.direction, newMouse.x * gs, newMouse.y * gs, gs, gs, newMouse.flip);
+
+	} 
+
+	function checkBounds() {
+
+		if (player.x < 0) {
+			player.x = tc - 1;
+		}
+		if (player.x > tc - 1) {
+			player.x = 0;
+		}
+		if (player.y < 0) {
+			player.y = tc - 1;
+		}
+		if (player.y > tc - 1) {
+			player.y = 0;
+		} 
+		if (newMouse.x < 0) {
+			newMouse.x = tc - 1;
+		}
+		if (newMouse.x > tc - 1) {
+			newMouse.x = 0;
+		}
+		if (newMouse.y < 0) {
+			newMouse.y = tc - 1;
+		}
+		if (newMouse.y > tc - 1) {
+			newMouse.y = 0;
+		}
+
+	} 
+	function ProccessPlayer() {
+
+		CheckCollision();
+		player.x += player.xv;
+		player.y += player.yv;
+		checkBounds();
+		lastFlip = !lastFlip;
+		trail.push({ x: player.x, y: player.y, direction:  player.directionAngle, flipNess: lastFlip });
+
+		while (trail.length > tail) {
+			trail.shift();
+		}
+
+	}
+
+	function proccessNewMouse() {
+
+		newMouse.x += newMouse.xv;
+		newMouse.y += newMouse.yv;
+		newMouse.lastFlip = !newMouse.lastFlip;
+
+		turnChance = RollADie(4);
+		turnDir = RollADie(4) - 1; 
+		if (turnChance == 1) {
+			directionSetForNewMouse(turnDir);
+		}
+
+		mouseTrail.push({ x: newMouse.x, y: newMouse.y, direction: newMouse.direction, directionAngle : newMouse.directionAngle, flipNess: lastFlip });
+		while (mouseTrail.length > mouseTail) {
+			mouseTrail.shift();
+		}
+
+	}
+
+	function proccessMouse() {
+
+		newMouse.x += newMouse.x;
+		newMouse.y += newMouse.y;
+		CheckCollision();
+		newMouse.flip = !newMouse.flip;
+		turnChance = RollADie(4);
+		turnDir = RollADie(4)-1; 
+		if (turnChance == 0) {
+			directionSetForMouse(turnDir);
+		}
+
+	}
+
+	function CheckCollision() {
+
+		if (newMouse.x == player.x && newMouse.y == player.y) {
+			eatSound.play();
+			tail++;
+			RandomizeMouse();
+		}		//collide with self
+
+		for (var i = 0; i < trail.length; i++) {
+			if ((trail[i].x === player.x) && (trail[i].y === player.y)) {
+				tail = 5;
+			}
+		}
+
+	}
+
+	function RollADie(numberOfSides) {
+
+		return Math.round(Math.random() * numberOfSides);
+
+	}
+
+	function RandomizeMouse() {
+
+		if (RollADie(2) == 1) {
+			newMouse.y = 0;
+			newMouse.x = RollADie(tc);;
+		}
+		else {
+			newMouse.x = 0;
+			newMouse.y = RollADie(tc);;
+		}
+		turnDir = RollADie(4) - 1; directionSetForMouse(turnDir);
+
+	} 
+
+	function RotateAndPaintImage(imageToRotate, angle, positionX, positionY, sizeX, sizeY, flip) {
+
+		Context.save();
+
+		if (!flip) {
+			Context.translate(positionX + sizeX / 2, positionY + sizeY / 2);
+		}
+		else {
+			Context.translate(positionX + sizeX / 2, positionY + sizeY / 2);
+		}
+
+		Context.rotate(angle * Math.PI / 180);
+
+		if (!flip) {
+			Context.drawImage(imageToRotate, sizeX / -2, sizeY / -2, sizeX, sizeY);
+		}
+		else {
+			Context.scale(-1, 1); Context.drawImage(imageToRotate, sizeX / 2, sizeY / -2, -sizeX, sizeY);
+		}
+
+		//{
+		//	Context.drawImage(imageToRotate, 0,0,imageToRotate.width,imageToRotate.height,sizeX / -2, sizeY / -2, sizeX, sizeY);
+		//	}
+		//		else
+		//		{	Context.drawImage(imageToRotate, sizeX / -2, sizeY / -2, -sizeX, sizeY,	imageToRotate.width,0,-imageToRotate.width,imageToRotate.height);
+		//		}
+
+		Context.restore();
+
+	} 
+
+	function KeyPush(evt) {
+
+		switch (evt.keyCode) {
+			case 37://left
+				directionSet(0);
+				break;
+			case 38://up
+				directionSet(1);
+				break;
+			case 39://right
+				directionSet(2);
+				break;
+			case 40://down
+				directionSet(3);
+				break;
+		}
+
+	}
+	function directionSet(direction) {
+
+		if (direction == 0) {
+			if (player.xv != 1) {
+				player.xv = -1; player.yv = 0;
+				directionAngle = 0;
+				player.flip=true;
+				
+				headTexture.src = "HeadSideTexture.png";
+			}
+		}
+		if (direction == 1) {
+			if (player.yv != 1) {
+				player.xv = 0; player.yv = -1;
+				player.directionAngle = 0;
+				player.flip=true;
+				headTexture.src = "HeadBackTexture.png";
+				
+			}
+		}
+		if (direction == 2) {
+			if (player.xv != -1) {
+				player.xv = 1; player.yv = 0;
+				player.directionAngle = 0;
+				player.flip=false;
+				headTexture.src = "HeadSideTexture.png";
+			}
+		}
+		if (direction == 3) {
+			if (player.yv != -1) {
+				player.xv = 0; player.yv = 1;
+				player.directionAngle = 0;
+				headTexture.src = "HeadTexture.png";
+				player.flip=false;
+
+			}
+		}
+
+	}
+	function directionSetForMouse(direction) {
+
+if (direction == 0) {
+	newMouse.directionAngle = 180;
+	newMouse.xv = 0;
+	newMouse.yv = -1;
+}
+if (direction == 1) {
+	newMouse.directionAngle = 90;
+	newMouse.xv = -1;
+	newMouse.yv = 0;
+}
+if (direction == 2) {
+	newMouse.directionAngle = 270;
+	newMouse.xv = 1;
+	newMouse.yv = 0;
+}
+if (direction == 3) {
+	newMouse.directionAngle = 0;
+	newMouse.xv = 0;
+	newMouse.yv = 1;
+}
+
+}
+	function directionSetForNewMouse(direction) {
+
+		if (direction == 0) {
+			if (newMouse.xv != 1) {
+				newMouse.xv = -1; newMouse.yv = 0;
+				newMouse.directionAngle = 0;
+				newMouse.flip=true;
+				newMouse.direction=0;
+				headTexture.src = "HeadSideTexture.png";
+			}
+		}
+		if (direction == 1) {
+			if (newMouse.yv != 1) {
+				newMouse.xv = 0; newMouse.yv = -1;
+				newMouse.directionAngle = 0;
+				newMouse.flip=true;
+				headTexture.src = "HeadBackTexture.png";
+				newMouse.direction=1;
+				
+			}
+		}
+		if (direction == 2) {
+			if (newMouse.xv != -1) {
+				newMouse.xv = 1; newMouse.yv = 0;
+				directionAngle = 2;
+				newMouse.flip=false;
+				headTexture.src = "HeadSideTexture.png";
+			}
+		}
+		if (direction == 3) {
+			if (newMouse.yv != -1) {
+				newMouse.xv = 0; newMouse.yv = 1;
+				newMouse.directionAngle = 0;
+				headTexture.src = "HeadTexture.png";
+				newMouse.flip=false;
+				directionAngle = 3;
+
+			}
+		}
+	}
+	</script>
+
+</body>
+
+</html>
